@@ -40,5 +40,15 @@ public class BookingQueryService {
                 .filter(booking -> booking.getId().equals(id))
                 .findFirst();
     }
+    public Booking createBooking(Long userId, Long serviceId, LocalDateTime startTime, LocalDateTime endTime) {
+        return new Booking(
+                3L,
+                userId,
+                serviceId,
+                startTime,
+                endTime,
+                BookingStatus.PENDING
+        );
+    }
 
 }

@@ -1,0 +1,9 @@
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "serviceId": 1,
+  "startTime": "2026-06-25T14:00:00",
+  "endTime": "2026-06-25T14:30:00"
+}
