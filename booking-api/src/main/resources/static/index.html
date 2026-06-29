@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking-System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>Booking-System</h1>
+    <p>Simple backend portfolio project with Java and Spring Boot.</p>
+</header>
+
+<main>
+    <section>
+        <h2>Current API</h2>
+        <p>The backend currently provides a REST API for managing bookings.</p>
+
+        <ul>
+            <li>Get all bookings</li>
+            <li>Get booking by ID</li>
+            <li>Create booking</li>
+            <li>Cancel booking</li>
+            <li>Delete booking</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Test API</h2>
+        <p>You can open the bookings endpoint directly:</p>
+
+        <a href="/api/bookings">Open bookings API</a>
+    </section>
+    <section>
+        <h2>Current Bookings</h2>
+        <p>The list below is loaded directly from the REST API.</p>
+
+        <div id="bookings">
+            Loading bookings...
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>Version 1 - in-memory storage</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

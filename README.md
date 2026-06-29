@@ -54,7 +54,8 @@ The project currently supports basic booking management:
 * Cancel an existing booking
 * Delete a booking
 * Validate input data
-* Return custom error responses
+* Return custom error responses 
+* Simple static web page for displaying bookings
 
 ## API Endpoints
 
@@ -200,7 +201,6 @@ Planned future improvements:
 * Add Spring Data JPA
 * Add Flyway database migrations
 * Add Docker support
-* Add a simple static web page with HTML, CSS and JavaScript
 * Add authentication and authorization
 * Add more tests
 * Improve error handling
