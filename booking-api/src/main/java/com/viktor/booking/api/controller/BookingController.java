@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.viktor.booking.api.dto.BookingCreateRequest;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 
 
 import java.util.List;
@@ -38,17 +39,14 @@ public class BookingController {
                 .orElse(ResponseEntity.notFound().build());
     }
     @PostMapping("/api/bookings")
-    public ResponseEntity<BookingResponse> createBooking(@RequestBody BookingCreateRequest request) {
-        Booking createdBooking = bookingQueryService.createBooking(
+    public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
+        Booking booking = bookingQueryService.createBooking(
                 request.getUserId(),
                 request.getServiceId(),
                 request.getStartTime(),
                 request.getEndTime()
         );
-
-        return ResponseEntity
-                .status(201)
-                .body(toResponse(createdBooking));
+        return ResponseEntity.status(201).body(toResponse(booking));
     }
 
     private BookingResponse toResponse(Booking booking) {
