@@ -60,4 +60,7 @@ public class Booking {
     public BookingStatus getStatus() {
         return status;
     }
+    public void setStatus(BookingStatus status) {
+        this.status = status;
+    }
 }

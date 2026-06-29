@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 
 
 import java.util.List;
@@ -48,6 +49,13 @@ public class BookingController {
         }
 
         return ResponseEntity.notFound().build();
+    }
+    @PutMapping("/api/bookings/{id}/cancel")
+    public ResponseEntity<BookingResponse> cancelBookingById(@PathVariable("id") Long id) {
+        return bookingQueryService.cancelBookingById(id)
+                .map(this::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
     @PostMapping("/api/bookings")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {

@@ -71,5 +71,14 @@ public class BookingQueryService {
     public boolean deleteBookingById(Long id) {
         return bookings.removeIf(booking -> booking.getId().equals(id));
     }
+    public Optional<Booking> cancelBookingById(Long id) {
+        return bookings.stream()
+                .filter(booking -> booking.getId().equals(id))
+                .findFirst()
+                .map(booking -> {
+                    booking.setStatus(BookingStatus.CANCELLED);
+                    return booking;
+                });
+    }
 
 }
