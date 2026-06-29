@@ -2,49 +2,30 @@ package com.viktor.booking.application.service;
 
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
-import org.springframework.stereotype.Service;
+import com.viktor.booking.repository.BookingRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class BookingService {
 
-    private final List<Booking> bookings = new ArrayList<>();
-    private Long nextId = 3L;
+    private final BookingRepository bookingRepository;
 
-    public BookingService() {
-        bookings.add(new Booking(
-                1L,
-                1L,
-                1L,
-                LocalDateTime.of(2026, 6, 25, 10, 0),
-                LocalDateTime.of(2026, 6, 25, 10, 30),
-                BookingStatus.CONFIRMED
-        ));
-
-        bookings.add(new Booking(
-                2L,
-                2L,
-                2L,
-                LocalDateTime.of(2026, 6, 25, 11, 0),
-                LocalDateTime.of(2026, 6, 25, 12, 0),
-                BookingStatus.PENDING
-        ));
+    public BookingService(BookingRepository bookingRepository) {
+        this.bookingRepository = bookingRepository;
     }
 
     public List<Booking> getAllBookings() {
-        return bookings;
+        return bookingRepository.findAll();
     }
 
     public Optional<Booking> getBookingById(Long id) {
-        return bookings
-                .stream()
-                .filter(booking -> booking.getId().equals(id))
-                .findFirst();
+        return bookingRepository.findById(id);
     }
 
     public Booking createBooking(Long userId, Long serviceId, LocalDateTime startTime, LocalDateTime endTime) {
@@ -54,8 +35,9 @@ public class BookingService {
                     "End time must not be before start time"
             );
         }
+
         Booking booking = new Booking(
-                nextId,
+                null,
                 userId,
                 serviceId,
                 startTime,
@@ -63,22 +45,25 @@ public class BookingService {
                 BookingStatus.PENDING
         );
 
-        bookings.add(booking);
-        nextId++;
+        return bookingRepository.save(booking);
+    }
 
-        return booking;
-    }
     public boolean deleteBookingById(Long id) {
-        return bookings.removeIf(booking -> booking.getId().equals(id));
+        Optional<Booking> booking = bookingRepository.findById(id);
+
+        if (booking.isEmpty()) {
+            return false;
+        }
+
+        bookingRepository.deleteById(id);
+        return true;
     }
+
     public Optional<Booking> cancelBookingById(Long id) {
-        return bookings.stream()
-                .filter(booking -> booking.getId().equals(id))
-                .findFirst()
+        return bookingRepository.findById(id)
                 .map(booking -> {
                     booking.setStatus(BookingStatus.CANCELLED);
                     return booking;
                 });
     }
-
 }
