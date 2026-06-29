@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class BookingQueryService {
+public class BookingService {
 
     private final List<Booking> bookings = new ArrayList<>();
     private Long nextId = 3L;
 
-    public BookingQueryService() {
+    public BookingService() {
         bookings.add(new Booking(
                 1L,
                 1L,
