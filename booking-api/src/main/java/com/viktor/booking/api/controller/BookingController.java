@@ -5,6 +5,8 @@ import com.viktor.booking.application.service.BookingQueryService;
 import com.viktor.booking.domain.model.Booking;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -23,6 +25,13 @@ public class BookingController {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+    @GetMapping("/api/bookings/{id}")
+    public ResponseEntity<BookingResponse> getBookingById(@PathVariable("id") Long id) {
+        return bookingQueryService.getBookingById(id)
+                .map(this::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     private BookingResponse toResponse(Booking booking) {

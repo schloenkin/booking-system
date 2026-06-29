@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BookingQueryService {
@@ -20,6 +21,7 @@ public class BookingQueryService {
                 BookingStatus.CONFIRMED
         );
 
+
         Booking booking2 = new Booking(
                 2L,
                 2L,
@@ -31,4 +33,12 @@ public class BookingQueryService {
 
         return List.of(booking1, booking2);
     }
+
+    public Optional<Booking> getBookingById(Long id) {
+        return getAllBookings()
+                .stream()
+                .filter(booking -> booking.getId().equals(id))
+                .findFirst();
+    }
+
 }
