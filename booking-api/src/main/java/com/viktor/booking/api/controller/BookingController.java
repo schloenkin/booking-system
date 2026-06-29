@@ -3,6 +3,7 @@ package com.viktor.booking.api.controller;
 import com.viktor.booking.api.dto.BookingResponse;
 import com.viktor.booking.application.service.BookingService;
 import com.viktor.booking.domain.model.Booking;
+import com.viktor.booking.domain.enums.BookingStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,13 @@ public class BookingController {
                 .map(this::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+    @GetMapping("/api/bookings/status/{status}")
+    public List<BookingResponse> getBookingsByStatus(@PathVariable("status") BookingStatus status) {
+        return bookingService.getBookingsByStatus(status)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
     @DeleteMapping("/api/bookings/{id}")
     public ResponseEntity<Void> deleteBookingById(@PathVariable("id") Long id) {

@@ -47,6 +47,13 @@ public class InMemoryBookingRepository implements BookingRepository {
                 .filter(booking -> booking.getId().equals(id))
                 .findFirst();
     }
+    @Override
+    public List<Booking> findByStatus(BookingStatus status) {
+        return bookings
+                .stream()
+                .filter(booking -> booking.getStatus() == status)
+                .toList();
+    }
 
     @Override
     public Booking save(Booking booking) {

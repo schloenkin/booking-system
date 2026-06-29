@@ -28,6 +28,10 @@ public class BookingService {
         return bookingRepository.findById(id);
     }
 
+    public List<Booking> getBookingsByStatus(BookingStatus status) {
+        return bookingRepository.findByStatus(status);
+    }
+
     public Booking createBooking(Long userId, Long serviceId, LocalDateTime startTime, LocalDateTime endTime) {
         if (endTime.isBefore(startTime)) {
             throw new ResponseStatusException(

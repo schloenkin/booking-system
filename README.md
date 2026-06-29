@@ -50,12 +50,13 @@ The project currently supports basic booking management:
 
 * Get all bookings
 * Get a booking by ID
+* Filter bookings by status
 * Create a new booking
 * Cancel an existing booking
 * Delete a booking
 * Validate input data
 * Return custom error responses 
-* Simple static web page for displaying bookings
+* Simple static web page for displaying bookings 
 
 ## API Endpoints
 
@@ -81,6 +82,17 @@ Example:
 
 ```text
 http://localhost:8080/api/bookings/1
+```
+### Get bookings by status
+
+```http
+GET /api/bookings/status/{status}
+```
+Example:
+```text
+http://localhost:8080/api/bookings/status/PENDING
+http://localhost:8080/api/bookings/status/CONFIRMED
+http://localhost:8080/api/bookings/status/CANCELLED
 ```
 
 ### Create booking
