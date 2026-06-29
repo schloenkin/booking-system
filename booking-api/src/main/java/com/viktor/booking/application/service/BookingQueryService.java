@@ -68,4 +68,8 @@ public class BookingQueryService {
 
         return booking;
     }
+    public boolean deleteBookingById(Long id) {
+        return bookings.removeIf(booking -> booking.getId().equals(id));
+    }
+
 }

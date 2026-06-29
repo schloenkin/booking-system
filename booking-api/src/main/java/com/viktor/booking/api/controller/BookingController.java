@@ -11,6 +11,7 @@ import com.viktor.booking.api.dto.BookingCreateRequest;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 
 import java.util.List;
@@ -37,6 +38,16 @@ public class BookingController {
                 .map(this::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+    @DeleteMapping("/api/bookings/{id}")
+    public ResponseEntity<Void> deleteBookingById(@PathVariable("id") Long id) {
+        boolean deleted = bookingQueryService.deleteBookingById(id);
+
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.notFound().build();
     }
     @PostMapping("/api/bookings")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
