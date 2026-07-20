@@ -1,10 +1,10 @@
-package com.viktor.booking.repository;
+package com.viktor.booking.application.repository;
 
+import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
 
 import java.util.List;
 import java.util.Optional;
-import com.viktor.booking.domain.enums.BookingStatus;
 
 public interface BookingRepository {
 
