@@ -1,5 +1,6 @@
-package com.viktor.booking.repository;
+package com.viktor.booking.infrastructure.repository;
 
+import com.viktor.booking.application.repository.BookingRepository;
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
 import org.springframework.stereotype.Repository;

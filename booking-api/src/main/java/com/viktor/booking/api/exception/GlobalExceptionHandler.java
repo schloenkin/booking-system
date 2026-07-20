@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import com.viktor.booking.domain.enums.BookingStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.util.Arrays;
+import com.viktor.booking.application.exception.InvalidBookingTimeException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -77,5 +78,20 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(errorResponse);
     }
+    @ExceptionHandler(InvalidBookingTimeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidBookingTimeException(
+            InvalidBookingTimeException exception,
+            HttpServletRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.toString(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
 
+        return ResponseEntity
+                .badRequest()
+                .body(errorResponse);
+    }
 }
