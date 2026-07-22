@@ -76,6 +76,18 @@ public class InMemoryBookingRepository implements BookingRepository {
     }
 
     @Override
+    public Optional<Booking> updateStatus(
+            Long id,
+            BookingStatus status
+    ) {
+        return findById(id)
+                .map(booking -> {
+                    booking.setStatus(status);
+                    return booking;
+                });
+    }
+
+    @Override
     public void deleteById(Long id) {
         bookings.removeIf(booking -> booking.getId().equals(id));
     }

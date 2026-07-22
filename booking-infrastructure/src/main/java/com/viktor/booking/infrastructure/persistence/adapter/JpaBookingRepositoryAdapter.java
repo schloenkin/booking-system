@@ -92,6 +92,23 @@ public class JpaBookingRepositoryAdapter implements BookingRepository {
     }
 
     @Override
+    public Optional<Booking> updateStatus(
+            Long id,
+            BookingStatus status
+    ) {
+        return bookingJpaRepository
+                .findById(id)
+                .map(entity -> {
+                    entity.setStatus(status);
+
+                    BookingEntity savedEntity =
+                            bookingJpaRepository.save(entity);
+
+                    return bookingMapper.toDomain(savedEntity);
+                });
+    }
+
+    @Override
     public void deleteById(Long id) {
         bookingJpaRepository.deleteById(id);
     }
