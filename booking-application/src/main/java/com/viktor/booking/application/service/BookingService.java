@@ -62,10 +62,9 @@ public class BookingService {
     }
 
     public Optional<Booking> cancelBookingById(Long id) {
-        return bookingRepository.findById(id)
-                .map(booking -> {
-                    booking.setStatus(BookingStatus.CANCELLED);
-                    return booking;
-                });
+        return bookingRepository.updateStatus(
+                id,
+                BookingStatus.CANCELLED
+        );
     }
 }

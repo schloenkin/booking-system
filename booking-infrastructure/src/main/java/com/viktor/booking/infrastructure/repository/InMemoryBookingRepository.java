@@ -4,6 +4,7 @@ import com.viktor.booking.application.repository.BookingRepository;
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Profile("!jpa")
 public class InMemoryBookingRepository implements BookingRepository {
 
     private final List<Booking> bookings = new ArrayList<>();
@@ -71,6 +73,18 @@ public class InMemoryBookingRepository implements BookingRepository {
         nextId++;
 
         return savedBooking;
+    }
+
+    @Override
+    public Optional<Booking> updateStatus(
+            Long id,
+            BookingStatus status
+    ) {
+        return findById(id)
+                .map(booking -> {
+                    booking.setStatus(status);
+                    return booking;
+                });
     }
 
     @Override
