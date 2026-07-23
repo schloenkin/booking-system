@@ -56,6 +56,10 @@ public class BookableServiceEntity {
         this.active = active;
     }
 
+    public void changeActive(boolean active) {
+        this.active = active;
+    }
+
     public Long getId() {
         return id;
     }
