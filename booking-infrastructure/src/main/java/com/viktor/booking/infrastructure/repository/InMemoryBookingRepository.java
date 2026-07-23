@@ -59,6 +59,25 @@ public class InMemoryBookingRepository implements BookingRepository {
     }
 
     @Override
+    public boolean existsConflictingBooking(
+            Long serviceId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    ) {
+        return bookings.stream()
+                .filter(booking ->
+                        booking.getServiceId().equals(serviceId)
+                )
+                .filter(booking ->
+                        booking.getStatus() != BookingStatus.CANCELLED
+                )
+                .anyMatch(booking ->
+                        booking.getStartTime().isBefore(endTime)
+                                && booking.getEndTime().isAfter(startTime)
+                );
+    }
+
+    @Override
     public Booking save(Booking booking) {
         Booking savedBooking = new Booking(
                 nextId,

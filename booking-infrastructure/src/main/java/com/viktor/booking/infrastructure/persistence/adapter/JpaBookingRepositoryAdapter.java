@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Repository
 @Profile("jpa")
@@ -62,6 +63,22 @@ public class JpaBookingRepositoryAdapter implements BookingRepository {
                 .stream()
                 .map(bookingMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsConflictingBooking(
+            Long serviceId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    ) {
+        return bookingJpaRepository
+                .existsByService_IdAndStatusNotAndStartTimeLessThanAndEndTimeGreaterThan(
+                        serviceId,
+                        BookingStatus.CANCELLED,
+                        endTime,
+                        startTime
+                );
     }
 
     @Override

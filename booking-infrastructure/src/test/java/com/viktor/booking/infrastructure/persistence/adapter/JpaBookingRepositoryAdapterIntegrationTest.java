@@ -355,6 +355,146 @@ class JpaBookingRepositoryAdapterIntegrationTest {
         ).isEmpty();
     }
 
+    @Test
+    void shouldDetectConflictingBookingThroughAdapter() {
+        UserEntity user = entityManager.persistAndFlush(
+                new UserEntity(
+                        "conflict-test@example.com",
+                        "hashed-password",
+                        UserRole.USER
+                )
+        );
+
+        BookableServiceEntity service = entityManager.persistAndFlush(
+                new BookableServiceEntity(
+                        "Conflict test service",
+                        "Service for testing booking conflicts",
+                        60,
+                        true
+                )
+        );
+
+        LocalDateTime existingStartTime =
+                LocalDateTime.of(2030, 1, 10, 10, 0);
+
+        Booking existingBooking = new Booking(
+                null,
+                user.getId(),
+                service.getId(),
+                existingStartTime,
+                existingStartTime.plusMinutes(60),
+                BookingStatus.PENDING
+        );
+
+        bookingRepositoryAdapter.save(existingBooking);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        boolean conflict =
+                bookingRepositoryAdapter.existsConflictingBooking(
+                        service.getId(),
+                        existingStartTime.plusMinutes(30),
+                        existingStartTime.plusMinutes(90)
+                );
+
+        assertThat(conflict)
+                .isTrue();
+    }
+
+    @Test
+    void shouldNotDetectConflictForAdjacentBooking() {
+        UserEntity user = entityManager.persistAndFlush(
+                new UserEntity(
+                        "adjacent-test@example.com",
+                        "hashed-password",
+                        UserRole.USER
+                )
+        );
+
+        BookableServiceEntity service = entityManager.persistAndFlush(
+                new BookableServiceEntity(
+                        "Adjacent test service",
+                        "Service for testing adjacent bookings",
+                        60,
+                        true
+                )
+        );
+
+        LocalDateTime existingStartTime =
+                LocalDateTime.of(2030, 1, 11, 10, 0);
+
+        bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        user.getId(),
+                        service.getId(),
+                        existingStartTime,
+                        existingStartTime.plusMinutes(60),
+                        BookingStatus.CONFIRMED
+                )
+        );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        boolean conflict =
+                bookingRepositoryAdapter.existsConflictingBooking(
+                        service.getId(),
+                        existingStartTime.plusMinutes(60),
+                        existingStartTime.plusMinutes(120)
+                );
+
+        assertThat(conflict)
+                .isFalse();
+    }
+
+    @Test
+    void shouldNotDetectConflictForCancelledBooking() {
+        UserEntity user = entityManager.persistAndFlush(
+                new UserEntity(
+                        "cancelled-conflict-test@example.com",
+                        "hashed-password",
+                        UserRole.USER
+                )
+        );
+
+        BookableServiceEntity service = entityManager.persistAndFlush(
+                new BookableServiceEntity(
+                        "Cancelled booking test service",
+                        "Service for testing cancelled booking conflicts",
+                        60,
+                        true
+                )
+        );
+
+        LocalDateTime existingStartTime =
+                LocalDateTime.of(2030, 1, 12, 10, 0);
+
+        bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        user.getId(),
+                        service.getId(),
+                        existingStartTime,
+                        existingStartTime.plusMinutes(60),
+                        BookingStatus.CANCELLED
+                )
+        );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        boolean conflict =
+                bookingRepositoryAdapter.existsConflictingBooking(
+                        service.getId(),
+                        existingStartTime.plusMinutes(30),
+                        existingStartTime.plusMinutes(90)
+                );
+
+        assertThat(conflict)
+                .isFalse();
+    }
 
     @Configuration
     @EnableAutoConfiguration

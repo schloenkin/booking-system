@@ -3,6 +3,7 @@ package com.viktor.booking.application.repository;
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,12 @@ public interface BookingRepository {
     Optional<Booking> findById(Long id);
 
     List<Booking> findByStatus(BookingStatus status);
+
+    boolean existsConflictingBooking(
+            Long serviceId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    );
 
     Booking save(Booking booking);
 
