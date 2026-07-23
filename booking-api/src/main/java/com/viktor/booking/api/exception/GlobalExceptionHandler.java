@@ -12,6 +12,14 @@ import com.viktor.booking.domain.enums.BookingStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.util.Arrays;
 import com.viktor.booking.application.exception.InvalidBookingTimeException;
+import com.viktor.booking.application.exception.BookingAlreadyCancelledException;
+import com.viktor.booking.application.exception.BookingInPastException;
+import com.viktor.booking.application.exception.BookingTimeConflictException;
+import com.viktor.booking.application.exception.BookableServiceNotFoundException;
+import com.viktor.booking.application.exception.InactiveBookableServiceException;
+import com.viktor.booking.application.exception.InvalidBookingDurationException;
+import com.viktor.booking.application.exception.UserNotFoundException;
+
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -78,6 +86,7 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(errorResponse);
     }
+
     @ExceptionHandler(InvalidBookingTimeException.class)
     public ResponseEntity<ErrorResponse> handleInvalidBookingTimeException(
             InvalidBookingTimeException exception,
@@ -92,6 +101,66 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .badRequest()
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler({
+            UserNotFoundException.class,
+            BookableServiceNotFoundException.class
+    })
+    public ResponseEntity<ErrorResponse> handleNotFoundException(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.toString(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler({
+            BookingInPastException.class,
+            InvalidBookingDurationException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBookingBadRequestException(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.toString(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .badRequest()
+                .body(errorResponse);
+    }
+    @ExceptionHandler({
+            InactiveBookableServiceException.class,
+            BookingTimeConflictException.class,
+            BookingAlreadyCancelledException.class
+    })
+    public ResponseEntity<ErrorResponse> handleConflictException(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.toString(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(errorResponse);
     }
 }
