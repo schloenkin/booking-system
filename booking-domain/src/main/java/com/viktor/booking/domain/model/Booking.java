@@ -1,6 +1,7 @@
 package com.viktor.booking.domain.model;
 
 import com.viktor.booking.domain.enums.BookingStatus;
+import com.viktor.booking.domain.exception.BookingCannotBeConfirmedException;
 
 import java.time.LocalDateTime;
 
@@ -60,7 +61,16 @@ public class Booking {
     public BookingStatus getStatus() {
         return status;
     }
+
     public void setStatus(BookingStatus status) {
         this.status = status;
+    }
+
+    public void confirm() {
+        if (status != BookingStatus.PENDING) {
+            throw new BookingCannotBeConfirmedException(status);
+        }
+
+        this.status = BookingStatus.CONFIRMED;
     }
 }

@@ -19,7 +19,7 @@ import com.viktor.booking.application.exception.BookableServiceNotFoundException
 import com.viktor.booking.application.exception.InactiveBookableServiceException;
 import com.viktor.booking.application.exception.InvalidBookingDurationException;
 import com.viktor.booking.application.exception.UserNotFoundException;
-
+import com.viktor.booking.domain.exception.BookingCannotBeConfirmedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -146,7 +146,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             InactiveBookableServiceException.class,
             BookingTimeConflictException.class,
-            BookingAlreadyCancelledException.class
+            BookingAlreadyCancelledException.class,
+            BookingCannotBeConfirmedException.class
     })
     public ResponseEntity<ErrorResponse> handleConflictException(
             RuntimeException exception,

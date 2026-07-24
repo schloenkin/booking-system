@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.viktor.booking.application.exception.BookingAlreadyCancelledException;
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
+import com.viktor.booking.domain.exception.BookingCannotBeConfirmedException;
 
 
 import java.time.LocalDateTime;
@@ -548,6 +549,93 @@ class BookingServiceTest {
 
         assertThat(result)
                 .isSameAs(savedBooking);
+    }
+
+    @Test
+    void shouldConfirmPendingBooking() {
+        Long bookingId = 8L;
+        LocalDateTime startTime = futureStartTime();
+
+        Booking pendingBooking = new Booking(
+                bookingId,
+                1L,
+                2L,
+                startTime,
+                startTime.plusMinutes(60),
+                BookingStatus.PENDING
+        );
+
+        Booking confirmedBooking = new Booking(
+                bookingId,
+                1L,
+                2L,
+                startTime,
+                startTime.plusMinutes(60),
+                BookingStatus.CONFIRMED
+        );
+
+        when(bookingRepository.findById(bookingId))
+                .thenReturn(Optional.of(pendingBooking));
+
+        when(bookingRepository.updateStatus(
+                bookingId,
+                BookingStatus.CONFIRMED
+        )).thenReturn(Optional.of(confirmedBooking));
+
+        Optional<Booking> result =
+                bookingService.confirmBookingById(bookingId);
+
+        assertThat(pendingBooking.getStatus())
+                .isEqualTo(BookingStatus.CONFIRMED);
+
+        assertThat(result)
+                .containsSame(confirmedBooking);
+
+        verify(bookingRepository)
+                .findById(bookingId);
+
+        verify(bookingRepository)
+                .updateStatus(
+                        bookingId,
+                        BookingStatus.CONFIRMED
+                );
+    }
+
+    @Test
+    void shouldRejectConfirmationWhenBookingIsCancelled() {
+        Long bookingId = 9L;
+        LocalDateTime startTime = futureStartTime();
+
+        Booking cancelledBooking = new Booking(
+                bookingId,
+                1L,
+                2L,
+                startTime,
+                startTime.plusMinutes(60),
+                BookingStatus.CANCELLED
+        );
+
+        when(bookingRepository.findById(bookingId))
+                .thenReturn(Optional.of(cancelledBooking));
+
+        assertThatThrownBy(() ->
+                bookingService.confirmBookingById(bookingId)
+        )
+                .isInstanceOf(
+                        BookingCannotBeConfirmedException.class
+                )
+                .hasMessage(
+                        "Booking cannot be confirmed from status: CANCELLED"
+                );
+
+        verify(bookingRepository)
+                .findById(bookingId);
+
+        verify(bookingRepository, never())
+                .updateStatus(
+                        bookingId,
+                        BookingStatus.CONFIRMED
+                );
     }
 
     private LocalDateTime futureStartTime() {
