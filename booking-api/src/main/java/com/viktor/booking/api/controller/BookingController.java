@@ -14,9 +14,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import com.viktor.booking.api.dto.PageResponse;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 public class BookingController {
@@ -28,12 +36,93 @@ public class BookingController {
     }
 
     @GetMapping("/api/bookings")
-    public List<BookingResponse> getBookings() {
-        return bookingService.getAllBookings()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public PageResponse<BookingResponse> searchBookings(
+            @RequestParam(
+                    name = "status",
+                    required = false
+            )
+            BookingStatus status,
+
+            @RequestParam(
+                    name = "userId",
+                    required = false
+            )
+            Long userId,
+
+            @RequestParam(
+                    name = "serviceId",
+                    required = false
+            )
+            Long serviceId,
+
+            @RequestParam(
+                    name = "from",
+                    required = false
+            )
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE_TIME
+            )
+            LocalDateTime from,
+
+            @RequestParam(
+                    name = "to",
+                    required = false
+            )
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE_TIME
+            )
+            LocalDateTime to,
+
+            @RequestParam(
+                    name = "page",
+                    defaultValue = "0"
+            )
+            int page,
+
+            @RequestParam(
+                    name = "size",
+                    defaultValue = "20"
+            )
+            int size,
+
+            @RequestParam(
+                    name = "sortBy",
+                    defaultValue = "startTime"
+            )
+            String sortBy,
+
+            @RequestParam(
+                    name = "direction",
+                    defaultValue = "asc"
+            )
+            String direction
+    ) {
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        status,
+                        userId,
+                        serviceId,
+                        from,
+                        to
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                );
+
+        PageResult<Booking> result =
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                );
+
+        return toPageResponse(result);
     }
+
     @GetMapping("/api/bookings/{id}")
     public ResponseEntity<BookingResponse> getBookingById(@PathVariable("id") Long id) {
         return bookingService.getBookingById(id)
@@ -83,6 +172,26 @@ public class BookingController {
                 request.getEndTime()
         );
         return ResponseEntity.status(201).body(toResponse(booking));
+    }
+
+    private PageResponse<BookingResponse> toPageResponse(
+            PageResult<Booking> result
+    ) {
+        List<BookingResponse> content = result
+                .content()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                result.page(),
+                result.size(),
+                result.totalElements(),
+                result.totalPages(),
+                result.first(),
+                result.last()
+        );
     }
     private BookingResponse toResponse(Booking booking) {
         return new BookingResponse(

@@ -5,7 +5,11 @@ import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
 import org.springframework.stereotype.Repository;
 import org.springframework.context.annotation.Profile;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
 
+import java.util.Comparator;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +63,87 @@ public class InMemoryBookingRepository implements BookingRepository {
     }
 
     @Override
+    public PageResult<Booking> search(
+            BookingSearchCriteria criteria,
+            PageRequestData pageRequest
+    ) {
+        Comparator<Booking> comparator =
+                createComparator(pageRequest.sortBy());
+
+        if ("desc".equalsIgnoreCase(pageRequest.direction())) {
+            comparator = comparator.reversed();
+        }
+
+        List<Booking> filteredBookings = bookings.stream()
+                .filter(booking ->
+                        criteria.status() == null
+                                || booking.getStatus()
+                                == criteria.status()
+                )
+                .filter(booking ->
+                        criteria.userId() == null
+                                || booking.getUserId()
+                                .equals(criteria.userId())
+                )
+                .filter(booking ->
+                        criteria.serviceId() == null
+                                || booking.getServiceId()
+                                .equals(criteria.serviceId())
+                )
+                .filter(booking ->
+                        criteria.from() == null
+                                || !booking.getStartTime()
+                                .isBefore(criteria.from())
+                )
+                .filter(booking ->
+                        criteria.to() == null
+                                || !booking.getStartTime()
+                                .isAfter(criteria.to())
+                )
+                .sorted(comparator)
+                .toList();
+
+        long totalElements = filteredBookings.size();
+
+        int totalPages = totalElements == 0
+                ? 0
+                : (int) Math.ceil(
+                (double) totalElements / pageRequest.size()
+        );
+
+        long offset =
+                (long) pageRequest.page() * pageRequest.size();
+
+        int fromIndex = (int) Math.min(
+                offset,
+                totalElements
+        );
+
+        int toIndex = (int) Math.min(
+                offset + pageRequest.size(),
+                totalElements
+        );
+
+        List<Booking> content =
+                filteredBookings.subList(fromIndex, toIndex);
+
+        boolean first = pageRequest.page() == 0;
+
+        boolean last = totalPages == 0
+                || pageRequest.page() >= totalPages - 1;
+
+        return new PageResult<>(
+                content,
+                pageRequest.page(),
+                pageRequest.size(),
+                totalElements,
+                totalPages,
+                first,
+                last
+        );
+    }
+
+    @Override
     public boolean existsConflictingBooking(
             Long serviceId,
             LocalDateTime startTime,
@@ -109,5 +194,43 @@ public class InMemoryBookingRepository implements BookingRepository {
     @Override
     public void deleteById(Long id) {
         bookings.removeIf(booking -> booking.getId().equals(id));
+    }
+
+    private Comparator<Booking> createComparator(
+            String sortBy
+    ) {
+        Comparator<Booking> comparator = switch (sortBy) {
+            case "id" ->
+                    Comparator.comparing(
+                            Booking::getId,
+                            Comparator.nullsLast(Long::compareTo)
+                    );
+
+            case "endTime" ->
+                    Comparator.comparing(
+                            Booking::getEndTime
+                    );
+
+            case "status" ->
+                    Comparator.comparing(
+                            Booking::getStatus
+                    );
+
+            case "startTime" ->
+                    Comparator.comparing(
+                            Booking::getStartTime
+                    );
+
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unsupported booking sort field: "
+                                    + sortBy
+                    );
+        };
+
+        return comparator.thenComparing(
+                Booking::getId,
+                Comparator.nullsLast(Long::compareTo)
+        );
     }
 }

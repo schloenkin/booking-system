@@ -26,7 +26,10 @@ import com.viktor.booking.application.exception.BookingAlreadyCancelledException
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
 import com.viktor.booking.domain.exception.BookingCannotBeConfirmedException;
-
+import com.viktor.booking.application.exception.InvalidBookingSearchException;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
 
 import java.time.LocalDateTime;
 
@@ -35,6 +38,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.Optional;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
@@ -635,6 +639,247 @@ class BookingServiceTest {
                 .updateStatus(
                         bookingId,
                         BookingStatus.CONFIRMED
+                );
+    }
+
+    @Test
+    void shouldRejectBookingSearchWhenPageIsNegative() {
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        -1,
+                        20,
+                        "startTime",
+                        "asc"
+                );
+
+        assertThatThrownBy(() ->
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                )
+        )
+                .isInstanceOf(
+                        InvalidBookingSearchException.class
+                )
+                .hasMessage(
+                        "Page number must not be negative"
+                );
+
+        verifyNoInteractions(bookingRepository);
+    }
+
+    @Test
+    void shouldRejectBookingSearchWhenPageSizeIsInvalid() {
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        101,
+                        "startTime",
+                        "asc"
+                );
+
+        assertThatThrownBy(() ->
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                )
+        )
+                .isInstanceOf(
+                        InvalidBookingSearchException.class
+                )
+                .hasMessage(
+                        "Page size must be between 1 and 100"
+                );
+
+        verifyNoInteractions(bookingRepository);
+    }
+    @Test
+    void shouldRejectBookingSearchWhenFromIsAfterTo() {
+        LocalDateTime from =
+                LocalDateTime.of(2030, 2, 1, 0, 0);
+
+        LocalDateTime to =
+                LocalDateTime.of(2030, 1, 1, 0, 0);
+
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        from,
+                        to
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        20,
+                        "startTime",
+                        "asc"
+                );
+
+        assertThatThrownBy(() ->
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                )
+        )
+                .isInstanceOf(
+                        InvalidBookingSearchException.class
+                )
+                .hasMessage(
+                        "Date from must not be after date to"
+                );
+
+        verifyNoInteractions(bookingRepository);
+    }
+    @Test
+    void shouldRejectBookingSearchWhenSortFieldIsUnsupported() {
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        20,
+                        "passwordHash",
+                        "asc"
+                );
+
+        assertThatThrownBy(() ->
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                )
+        )
+                .isInstanceOf(
+                        InvalidBookingSearchException.class
+                )
+                .hasMessage(
+                        "Unsupported booking sort field: passwordHash"
+                );
+
+        verifyNoInteractions(bookingRepository);
+    }
+    @Test
+    void shouldRejectBookingSearchWhenDirectionIsUnsupported() {
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        20,
+                        "startTime",
+                        "sideways"
+                );
+
+        assertThatThrownBy(() ->
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                )
+        )
+                .isInstanceOf(
+                        InvalidBookingSearchException.class
+                )
+                .hasMessage(
+                        "Sort direction must be asc or desc"
+                );
+
+        verifyNoInteractions(bookingRepository);
+    }
+
+    @Test
+    void shouldSearchBookingsWhenParametersAreValid() {
+        LocalDateTime startTime =
+                LocalDateTime.of(2030, 1, 15, 10, 0);
+
+        Booking booking = new Booking(
+                1L,
+                1L,
+                2L,
+                startTime,
+                startTime.plusMinutes(60),
+                BookingStatus.PENDING
+        );
+
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        BookingStatus.PENDING,
+                        1L,
+                        2L,
+                        LocalDateTime.of(2030, 1, 1, 0, 0),
+                        LocalDateTime.of(2030, 1, 31, 23, 59)
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        20,
+                        "startTime",
+                        "asc"
+                );
+
+        PageResult<Booking> repositoryResult =
+                new PageResult<>(
+                        List.of(booking),
+                        0,
+                        20,
+                        1,
+                        1,
+                        true,
+                        true
+                );
+
+        when(bookingRepository.search(
+                criteria,
+                pageRequest
+        )).thenReturn(repositoryResult);
+
+        PageResult<Booking> result =
+                bookingService.searchBookings(
+                        criteria,
+                        pageRequest
+                );
+
+        assertThat(result)
+                .isSameAs(repositoryResult);
+
+        verify(bookingRepository)
+                .search(
+                        criteria,
+                        pageRequest
                 );
     }
 

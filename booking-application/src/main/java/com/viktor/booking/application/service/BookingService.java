@@ -16,14 +16,28 @@ import com.viktor.booking.application.exception.BookingInPastException;
 import com.viktor.booking.application.exception.BookingTimeConflictException;
 import com.viktor.booking.application.exception.BookingAlreadyCancelledException;
 import org.springframework.transaction.annotation.Transactional;
+import com.viktor.booking.application.exception.InvalidBookingSearchException;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.time.Duration;
+import java.util.Set;
 
 @Service
 public class BookingService {
+
+    private static final Set<String> ALLOWED_SORT_FIELDS =
+            Set.of(
+                    "id",
+                    "startTime",
+                    "endTime",
+                    "status"
+            );
 
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -49,6 +63,59 @@ public class BookingService {
 
     public List<Booking> getBookingsByStatus(BookingStatus status) {
         return bookingRepository.findByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResult<Booking> searchBookings(
+            BookingSearchCriteria criteria,
+            PageRequestData pageRequest
+    ) {
+        if (pageRequest.page() < 0) {
+            throw new InvalidBookingSearchException(
+                    "Page number must not be negative"
+            );
+        }
+
+        if (pageRequest.size() < 1
+                || pageRequest.size() > 100) {
+            throw new InvalidBookingSearchException(
+                    "Page size must be between 1 and 100"
+            );
+        }
+
+        if (criteria.from() != null
+                && criteria.to() != null
+                && criteria.from().isAfter(criteria.to())) {
+            throw new InvalidBookingSearchException(
+                    "Date from must not be after date to"
+            );
+        }
+
+        if (pageRequest.sortBy() == null
+                || !ALLOWED_SORT_FIELDS.contains(
+                pageRequest.sortBy()
+        )) {
+            throw new InvalidBookingSearchException(
+                    "Unsupported booking sort field: "
+                            + pageRequest.sortBy()
+            );
+        }
+
+        if (!"asc".equalsIgnoreCase(
+                pageRequest.direction()
+        )
+                && !"desc".equalsIgnoreCase(
+                pageRequest.direction()
+        )) {
+            throw new InvalidBookingSearchException(
+                    "Sort direction must be asc or desc"
+            );
+        }
+
+        return bookingRepository.search(
+                criteria,
+                pageRequest
+        );
     }
 
     @Transactional

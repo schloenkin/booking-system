@@ -8,6 +8,10 @@ import com.viktor.booking.infrastructure.persistence.entity.BookingEntity;
 import com.viktor.booking.infrastructure.persistence.entity.UserEntity;
 import com.viktor.booking.infrastructure.persistence.mapper.BookingMapper;
 import com.viktor.booking.infrastructure.persistence.repository.BookingJpaRepository;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -493,6 +497,272 @@ class JpaBookingRepositoryAdapterIntegrationTest {
                 );
 
         assertThat(conflict)
+                .isFalse();
+    }
+
+    @Test
+    void shouldFilterBookingsBySearchCriteria() {
+        UserEntity firstUser = entityManager.persistAndFlush(
+                new UserEntity(
+                        "search-user-one@example.com",
+                        "hashed-password",
+                        UserRole.USER
+                )
+        );
+
+        UserEntity secondUser = entityManager.persistAndFlush(
+                new UserEntity(
+                        "search-user-two@example.com",
+                        "hashed-password",
+                        UserRole.USER
+                )
+        );
+
+        BookableServiceEntity firstService =
+                entityManager.persistAndFlush(
+                        new BookableServiceEntity(
+                                "Search service one",
+                                "First search test service",
+                                60,
+                                true
+                        )
+                );
+
+        BookableServiceEntity secondService =
+                entityManager.persistAndFlush(
+                        new BookableServiceEntity(
+                                "Search service two",
+                                "Second search test service",
+                                60,
+                                true
+                        )
+                );
+
+        LocalDateTime matchingStartTime =
+                LocalDateTime.of(2030, 2, 10, 10, 0);
+
+        Booking matchingBooking = bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        firstUser.getId(),
+                        firstService.getId(),
+                        matchingStartTime,
+                        matchingStartTime.plusMinutes(60),
+                        BookingStatus.PENDING
+                )
+        );
+
+        bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        firstUser.getId(),
+                        firstService.getId(),
+                        matchingStartTime.plusDays(1),
+                        matchingStartTime.plusDays(1)
+                                .plusMinutes(60),
+                        BookingStatus.CONFIRMED
+                )
+        );
+
+        bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        secondUser.getId(),
+                        secondService.getId(),
+                        matchingStartTime.plusDays(2),
+                        matchingStartTime.plusDays(2)
+                                .plusMinutes(60),
+                        BookingStatus.PENDING
+                )
+        );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        BookingStatus.PENDING,
+                        firstUser.getId(),
+                        firstService.getId(),
+                        LocalDateTime.of(2030, 2, 1, 0, 0),
+                        LocalDateTime.of(2030, 2, 28, 23, 59)
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        10,
+                        "startTime",
+                        "asc"
+                );
+
+        PageResult<Booking> result =
+                bookingRepositoryAdapter.search(
+                        criteria,
+                        pageRequest
+                );
+
+        assertThat(result.content())
+                .hasSize(1);
+
+        assertThat(result.content().get(0).getId())
+                .isEqualTo(matchingBooking.getId());
+
+        assertThat(result.content().get(0).getStatus())
+                .isEqualTo(BookingStatus.PENDING);
+
+        assertThat(result.content().get(0).getUserId())
+                .isEqualTo(firstUser.getId());
+
+        assertThat(result.content().get(0).getServiceId())
+                .isEqualTo(firstService.getId());
+
+        assertThat(result.totalElements())
+                .isEqualTo(1);
+
+        assertThat(result.totalPages())
+                .isEqualTo(1);
+
+        assertThat(result.first())
+                .isTrue();
+
+        assertThat(result.last())
+                .isTrue();
+    }
+
+    @Test
+    void shouldSortAndPaginateBookings() {
+        UserEntity user = entityManager.persistAndFlush(
+                new UserEntity(
+                        "pagination-user@example.com",
+                        "hashed-password",
+                        UserRole.USER
+                )
+        );
+
+        BookableServiceEntity service =
+                entityManager.persistAndFlush(
+                        new BookableServiceEntity(
+                                "Pagination service",
+                                "Service for pagination test",
+                                60,
+                                true
+                        )
+                );
+
+        LocalDateTime firstStartTime =
+                LocalDateTime.of(2030, 3, 1, 10, 0);
+
+        bookingRepositoryAdapter.save(
+                        new Booking(
+                                null,
+                                user.getId(),
+                                service.getId(),
+                                firstStartTime,
+                                firstStartTime.plusMinutes(60),
+                                BookingStatus.PENDING
+                        )
+                );
+
+        Booking secondBooking =
+                bookingRepositoryAdapter.save(
+                        new Booking(
+                                null,
+                                user.getId(),
+                                service.getId(),
+                                firstStartTime.plusDays(1),
+                                firstStartTime.plusDays(1)
+                                        .plusMinutes(60),
+                                BookingStatus.PENDING
+                        )
+                );
+
+        Booking thirdBooking =
+                bookingRepositoryAdapter.save(
+                        new Booking(
+                                null,
+                                user.getId(),
+                                service.getId(),
+                                firstStartTime.plusDays(2),
+                                firstStartTime.plusDays(2)
+                                        .plusMinutes(60),
+                                BookingStatus.PENDING
+                        )
+                );
+
+        bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        user.getId(),
+                        service.getId(),
+                        firstStartTime.plusDays(3),
+                        firstStartTime.plusDays(3)
+                                .plusMinutes(60),
+                        BookingStatus.PENDING
+                )
+        );
+
+        bookingRepositoryAdapter.save(
+                new Booking(
+                        null,
+                        user.getId(),
+                        service.getId(),
+                        firstStartTime.plusDays(4),
+                        firstStartTime.plusDays(4)
+                                .plusMinutes(60),
+                        BookingStatus.PENDING
+                )
+        );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        user.getId(),
+                        service.getId(),
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        1,
+                        2,
+                        "startTime",
+                        "desc"
+                );
+
+        PageResult<Booking> result =
+                bookingRepositoryAdapter.search(
+                        criteria,
+                        pageRequest
+                );
+
+        assertThat(result.content())
+                .extracting(Booking::getId)
+                .containsExactly(
+                        thirdBooking.getId(),
+                        secondBooking.getId()
+                );
+
+        assertThat(result.page())
+                .isEqualTo(1);
+
+        assertThat(result.size())
+                .isEqualTo(2);
+
+        assertThat(result.totalElements())
+                .isEqualTo(5);
+
+        assertThat(result.totalPages())
+                .isEqualTo(3);
+
+        assertThat(result.first())
+                .isFalse();
+
+        assertThat(result.last())
                 .isFalse();
     }
 

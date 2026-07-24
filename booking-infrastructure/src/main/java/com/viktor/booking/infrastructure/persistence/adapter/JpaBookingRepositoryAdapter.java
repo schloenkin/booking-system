@@ -10,10 +10,23 @@ import com.viktor.booking.infrastructure.persistence.mapper.BookingMapper;
 import com.viktor.booking.infrastructure.persistence.repository.BookableServiceJpaRepository;
 import com.viktor.booking.infrastructure.persistence.repository.BookingJpaRepository;
 import com.viktor.booking.infrastructure.persistence.repository.UserJpaRepository;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
+
+import jakarta.persistence.criteria.Predicate;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
@@ -63,6 +76,60 @@ public class JpaBookingRepositoryAdapter implements BookingRepository {
                 .stream()
                 .map(bookingMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<Booking> search(
+            BookingSearchCriteria criteria,
+            PageRequestData pageRequest
+    ) {
+        Specification<BookingEntity> specification =
+                createSearchSpecification(criteria);
+
+        Sort.Direction direction =
+                Sort.Direction.fromString(
+                        pageRequest.direction()
+                );
+
+        Sort sort = Sort.by(
+                direction,
+                pageRequest.sortBy()
+        );
+
+        if (!"id".equals(pageRequest.sortBy())) {
+            sort = sort.and(
+                    Sort.by(Sort.Direction.ASC, "id")
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                pageRequest.page(),
+                pageRequest.size(),
+                sort
+        );
+
+        Page<BookingEntity> entityPage =
+                bookingJpaRepository.findAll(
+                        specification,
+                        pageable
+                );
+
+        List<Booking> content = entityPage
+                .getContent()
+                .stream()
+                .map(bookingMapper::toDomain)
+                .toList();
+
+        return new PageResult<>(
+                content,
+                entityPage.getNumber(),
+                entityPage.getSize(),
+                entityPage.getTotalElements(),
+                entityPage.getTotalPages(),
+                entityPage.isFirst(),
+                entityPage.isLast()
+        );
     }
 
     @Override
@@ -129,4 +196,68 @@ public class JpaBookingRepositoryAdapter implements BookingRepository {
     public void deleteById(Long id) {
         bookingJpaRepository.deleteById(id);
     }
+
+    private Specification<BookingEntity>
+    createSearchSpecification(
+            BookingSearchCriteria criteria
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates =
+                    new ArrayList<>();
+
+            if (criteria.status() != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("status"),
+                                criteria.status()
+                        )
+                );
+            }
+
+            if (criteria.userId() != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("user").get("id"),
+                                criteria.userId()
+                        )
+                );
+            }
+
+            if (criteria.serviceId() != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("service").get("id"),
+                                criteria.serviceId()
+                        )
+                );
+            }
+
+            if (criteria.from() != null) {
+                predicates.add(
+                        criteriaBuilder.greaterThanOrEqualTo(
+                                root.<LocalDateTime>get(
+                                        "startTime"
+                                ),
+                                criteria.from()
+                        )
+                );
+            }
+
+            if (criteria.to() != null) {
+                predicates.add(
+                        criteriaBuilder.lessThanOrEqualTo(
+                                root.<LocalDateTime>get(
+                                        "startTime"
+                                ),
+                                criteria.to()
+                        )
+                );
+            }
+
+            return criteriaBuilder.and(
+                    predicates.toArray(Predicate[]::new)
+            );
+        };
+    }
+
 }
