@@ -65,6 +65,15 @@ public class BookingController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    @PutMapping("/api/bookings/{id}/confirm")
+    public ResponseEntity<BookingResponse> confirmBookingById(
+            @PathVariable("id") Long id
+    ) {
+        return bookingService.confirmBookingById(id)
+                .map(this::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
     @PostMapping("/api/bookings")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
         Booking booking = bookingService.createBooking(
@@ -75,7 +84,6 @@ public class BookingController {
         );
         return ResponseEntity.status(201).body(toResponse(booking));
     }
-
     private BookingResponse toResponse(Booking booking) {
         return new BookingResponse(
                 booking.getId(),

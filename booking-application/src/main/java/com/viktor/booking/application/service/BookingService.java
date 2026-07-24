@@ -137,4 +137,23 @@ public class BookingService {
         );
     }
 
+    @Transactional
+    public Optional<Booking> confirmBookingById(Long id) {
+        Optional<Booking> booking =
+                bookingRepository.findById(id);
+
+        if (booking.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Booking existingBooking = booking.get();
+
+        existingBooking.confirm();
+
+        return bookingRepository.updateStatus(
+                id,
+                existingBooking.getStatus()
+        );
+    }
+
 }
