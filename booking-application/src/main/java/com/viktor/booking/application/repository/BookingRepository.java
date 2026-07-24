@@ -2,6 +2,10 @@ package com.viktor.booking.application.repository;
 
 import com.viktor.booking.domain.enums.BookingStatus;
 import com.viktor.booking.domain.model.Booking;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +18,11 @@ public interface BookingRepository {
     Optional<Booking> findById(Long id);
 
     List<Booking> findByStatus(BookingStatus status);
+
+    PageResult<Booking> search(
+            BookingSearchCriteria criteria,
+            PageRequestData pageRequest
+    );
 
     boolean existsConflictingBooking(
             Long serviceId,

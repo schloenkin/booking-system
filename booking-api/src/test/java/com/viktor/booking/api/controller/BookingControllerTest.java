@@ -13,6 +13,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.http.MediaType;
+import com.viktor.booking.application.query.BookingSearchCriteria;
+import com.viktor.booking.application.query.PageRequestData;
+import com.viktor.booking.application.query.PageResult;
+import com.viktor.booking.application.exception.InvalidBookingSearchException;
+
 
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -120,7 +125,7 @@ class BookingControllerTest {
                 );
     }
     @Test
-    void shouldReturnAllBookings() throws Exception {
+    void shouldReturnFirstPageOfAllBookings() throws Exception {
         LocalDateTime startTime =
                 LocalDateTime.now().plusDays(1);
 
@@ -142,27 +147,189 @@ class BookingControllerTest {
                 BookingStatus.CONFIRMED
         );
 
-        when(bookingService.getAllBookings())
-                .thenReturn(List.of(
-                        firstBooking,
-                        secondBooking
-                ));
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        0,
+                        20,
+                        "startTime",
+                        "asc"
+                );
+
+        PageResult<Booking> pageResult =
+                new PageResult<>(
+                        List.of(
+                                firstBooking,
+                                secondBooking
+                        ),
+                        0,
+                        20,
+                        2,
+                        1,
+                        true,
+                        true
+                );
+
+        when(bookingService.searchBookings(
+                criteria,
+                pageRequest
+        )).thenReturn(pageResult);
 
         mockMvc.perform(get("/api/bookings"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$.content").isArray())
                 .andExpect(
-                        jsonPath("$[0].status")
+                        jsonPath("$.content.length()")
+                                .value(2)
+                )
+                .andExpect(
+                        jsonPath("$.content[0].id")
+                                .value(1)
+                )
+                .andExpect(
+                        jsonPath("$.content[0].status")
                                 .value("PENDING")
                 )
-                .andExpect(jsonPath("$[1].id").value(2))
                 .andExpect(
-                        jsonPath("$[1].status")
+                        jsonPath("$.content[1].id")
+                                .value(2)
+                )
+                .andExpect(
+                        jsonPath("$.content[1].status")
                                 .value("CONFIRMED")
-                );
+                )
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(
+                        jsonPath("$.totalElements")
+                                .value(2)
+                )
+                .andExpect(
+                        jsonPath("$.totalPages")
+                                .value(1)
+                )
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true));
+
+        verify(bookingService).searchBookings(
+                criteria,
+                pageRequest
+        );
     }
+
+    @Test
+    void shouldSearchBookingsUsingQueryParameters() throws Exception {
+        LocalDateTime startTime =
+                LocalDateTime.of(2030, 4, 15, 10, 0);
+
+        Booking booking = new Booking(
+                10L,
+                3L,
+                7L,
+                startTime,
+                startTime.plusMinutes(60),
+                BookingStatus.PENDING
+        );
+
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        BookingStatus.PENDING,
+                        3L,
+                        7L,
+                        LocalDateTime.of(2030, 4, 1, 0, 0),
+                        LocalDateTime.of(2030, 4, 30, 23, 59)
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        1,
+                        5,
+                        "endTime",
+                        "desc"
+                );
+
+        PageResult<Booking> pageResult =
+                new PageResult<>(
+                        List.of(booking),
+                        1,
+                        5,
+                        6,
+                        2,
+                        false,
+                        true
+                );
+
+        when(bookingService.searchBookings(
+                criteria,
+                pageRequest
+        )).thenReturn(pageResult);
+
+        mockMvc.perform(
+                        get("/api/bookings")
+                                .param("status", "PENDING")
+                                .param("userId", "3")
+                                .param("serviceId", "7")
+                                .param(
+                                        "from",
+                                        "2030-04-01T00:00:00"
+                                )
+                                .param(
+                                        "to",
+                                        "2030-04-30T23:59:00"
+                                )
+                                .param("page", "1")
+                                .param("size", "5")
+                                .param("sortBy", "endTime")
+                                .param("direction", "desc")
+                )
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$.content.length()")
+                                .value(1)
+                )
+                .andExpect(
+                        jsonPath("$.content[0].id")
+                                .value(10)
+                )
+                .andExpect(
+                        jsonPath("$.content[0].userId")
+                                .value(3)
+                )
+                .andExpect(
+                        jsonPath("$.content[0].serviceId")
+                                .value(7)
+                )
+                .andExpect(
+                        jsonPath("$.content[0].status")
+                                .value("PENDING")
+                )
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(5))
+                .andExpect(
+                        jsonPath("$.totalElements")
+                                .value(6)
+                )
+                .andExpect(
+                        jsonPath("$.totalPages")
+                                .value(2)
+                )
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(true));
+
+        verify(bookingService).searchBookings(
+                criteria,
+                pageRequest
+        );
+    }
+
     @Test
     void shouldReturnBookingById() throws Exception {
         Long bookingId = 3L;
@@ -381,6 +548,62 @@ class BookingControllerTest {
                         delete("/api/bookings/{id}", bookingId)
                 )
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenBookingSearchIsInvalid()
+            throws Exception {
+
+        BookingSearchCriteria criteria =
+                new BookingSearchCriteria(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+
+        PageRequestData pageRequest =
+                new PageRequestData(
+                        -1,
+                        20,
+                        "startTime",
+                        "asc"
+                );
+
+        when(bookingService.searchBookings(
+                criteria,
+                pageRequest
+        )).thenThrow(
+                new InvalidBookingSearchException(
+                        "Page number must not be negative"
+                )
+        );
+
+        mockMvc.perform(
+                        get("/api/bookings")
+                                .param("page", "-1")
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(400)
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "Page number must not be negative"
+                                )
+                )
+                .andExpect(
+                        jsonPath("$.path")
+                                .value("/api/bookings")
+                );
+
+        verify(bookingService).searchBookings(
+                criteria,
+                pageRequest
+        );
     }
 
 }
