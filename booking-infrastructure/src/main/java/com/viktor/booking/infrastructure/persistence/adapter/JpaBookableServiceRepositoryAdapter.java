@@ -48,6 +48,13 @@ public class JpaBookableServiceRepositoryAdapter
     }
 
     @Override
+    public Optional<BookableService> findByIdForUpdate(Long id) {
+        return serviceJpaRepository
+                .findByIdForUpdate(id)
+                .map(serviceMapper::toDomain);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<BookableService> findAll() {
         return serviceJpaRepository.findAll()
