@@ -112,7 +112,7 @@ class BookingServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(existingUser));
 
-        when(serviceRepository.findById(missingServiceId))
+        when(serviceRepository.findByIdForUpdate(missingServiceId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
@@ -134,7 +134,7 @@ class BookingServiceTest {
                 .findById(userId);
 
         verify(serviceRepository)
-                .findById(missingServiceId);
+                .findByIdForUpdate(missingServiceId);
 
         verifyNoInteractions(bookingRepository);
     }
@@ -165,7 +165,7 @@ class BookingServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(existingUser));
 
-        when(serviceRepository.findById(serviceId))
+        when(serviceRepository.findByIdForUpdate(serviceId))
                 .thenReturn(Optional.of(inactiveService));
 
         assertThatThrownBy(() ->
@@ -187,7 +187,7 @@ class BookingServiceTest {
                 .findById(userId);
 
         verify(serviceRepository)
-                .findById(serviceId);
+                .findByIdForUpdate(serviceId);
 
         verifyNoInteractions(bookingRepository);
     }
@@ -217,7 +217,7 @@ class BookingServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(existingUser));
 
-        when(serviceRepository.findById(serviceId))
+        when(serviceRepository.findByIdForUpdate(serviceId))
                 .thenReturn(Optional.of(service));
 
         assertThatThrownBy(() ->
@@ -239,7 +239,7 @@ class BookingServiceTest {
                 .findById(userId);
 
         verify(serviceRepository)
-                .findById(serviceId);
+                .findByIdForUpdate(serviceId);
 
         verifyNoInteractions(bookingRepository);
     }
@@ -298,7 +298,7 @@ class BookingServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(existingUser));
 
-        when(serviceRepository.findById(serviceId))
+        when(serviceRepository.findByIdForUpdate(serviceId))
                 .thenReturn(Optional.of(service));
 
         when(bookingRepository.existsConflictingBooking(
@@ -325,7 +325,7 @@ class BookingServiceTest {
                 .findById(userId);
 
         verify(serviceRepository)
-                .findById(serviceId);
+                .findByIdForUpdate(serviceId);
 
         verify(bookingRepository)
                 .existsConflictingBooking(
@@ -503,7 +503,7 @@ class BookingServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(existingUser));
 
-        when(serviceRepository.findById(serviceId))
+        when(serviceRepository.findByIdForUpdate(serviceId))
                 .thenReturn(Optional.of(activeService));
 
         when(bookingRepository.existsConflictingBooking(

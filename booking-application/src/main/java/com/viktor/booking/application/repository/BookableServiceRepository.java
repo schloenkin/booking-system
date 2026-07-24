@@ -11,6 +11,8 @@ public interface BookableServiceRepository {
 
     Optional<BookableService> findById(Long id);
 
+    Optional<BookableService> findByIdForUpdate(Long id);
+
     List<BookableService> findAll();
 
     Optional<BookableService> updateActive(

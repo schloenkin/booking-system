@@ -15,6 +15,7 @@ import com.viktor.booking.application.exception.InvalidBookingDurationException;
 import com.viktor.booking.application.exception.BookingInPastException;
 import com.viktor.booking.application.exception.BookingTimeConflictException;
 import com.viktor.booking.application.exception.BookingAlreadyCancelledException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -50,6 +51,7 @@ public class BookingService {
         return bookingRepository.findByStatus(status);
     }
 
+    @Transactional
     public Booking createBooking(Long userId, Long serviceId, LocalDateTime startTime, LocalDateTime endTime) {
         if (!endTime.isAfter(startTime)) {
             throw new InvalidBookingTimeException(
@@ -66,10 +68,11 @@ public class BookingService {
         }
 
         BookableService service = serviceRepository
-                .findById(serviceId)
+                .findByIdForUpdate(serviceId)
                 .orElseThrow(() ->
                         new BookableServiceNotFoundException(serviceId)
                 );
+
         if (!service.isActive()) {
             throw new InactiveBookableServiceException(serviceId);
         }
